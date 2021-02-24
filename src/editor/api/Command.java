@@ -8,5 +8,6 @@ public enum Command {
     REDO,
     COPY,
     DELETE,
-    PASTE
+    PASTE,
+    SAVE
 }

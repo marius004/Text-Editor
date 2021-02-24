@@ -1,12 +1,16 @@
 package editor.ui.components;
 
-import editor.api.EditorObservableData;
-import editor.api.FileReader;
+import editor.api.dp.EditorObservableData;
 import editor.api.dp.Observer;
+import editor.api.helpers.FileReader;
+import editor.api.helpers.FileSaver;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 
 /// GOOD FOR SYNTAX HIGHLIGHTING
@@ -16,10 +20,13 @@ public class Editor implements Observer<EditorObservableData> {
 
     private TextArea textArea;
     private Scene scene;
+    private Stage stage;
     private String copiedText = "";
+    private String filePath = "";
 
-    public Editor(Scene scene) {
+    public Editor(Stage stage, Scene scene) {
 
+        this.stage = stage;
         this.scene = scene;
         this.textArea = new TextArea();
 
@@ -51,6 +58,10 @@ public class Editor implements Observer<EditorObservableData> {
                openFile(observableData);
                break;
 
+           case CLOSE_FILE:
+               closeApp();
+               break;
+
            case COPY:
                copyText();
                break;
@@ -58,11 +69,47 @@ public class Editor implements Observer<EditorObservableData> {
            case PASTE:
                pasteText();
                break;
+
+           case SAVE:
+               saveToFile();
+               break;
+
+           default:
+               System.out.println(observableData.getCommand().toString() + " is not implemented yet");
+               break;
        }
     }
 
+    void closeApp() {
+        saveToFile();
+        System.exit(0);
+    }
 
+    void saveToFile() {
 
+        if (this.filePath == "") {
+
+            FileChooser fileChooser = new FileChooser();
+            File newFile = fileChooser.showSaveDialog(stage);
+
+            if(newFile != null) {
+                filePath = newFile.getAbsolutePath();
+                updateStageTitle(newFile.getName());
+            }
+
+            return;
+        }
+
+        FileSaver saver = new FileSaver(this.filePath, this.textArea.getText());
+
+        try {
+            saver.save();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /// DONE
     void pasteText() {
         int cursorPosition = textArea.getCaretPosition();
 
@@ -92,15 +139,33 @@ public class Editor implements Observer<EditorObservableData> {
         }
     }
 
-    void openFile(EditorObservableData observableData) {
-        FileReader reader = new FileReader(observableData.getData());
+    void updateStageTitle(String title) {
+        if(title != "" && title != null)
+            this.stage.setTitle(title);
+    }
 
-        try {
-            var text = reader.readFile();
-            textArea.setText(text);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            System.exit(0);
+    void openFile(EditorObservableData observableData) {
+
+        if(textArea.getText().trim() != "")
+            saveToFile();
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select file");
+
+        File file = fileChooser.showOpenDialog(stage);
+
+        if(file != null) {
+
+            this.filePath = file.toString();
+            updateStageTitle(file.getName());
+
+            try {
+                FileReader reader = new FileReader(this.filePath);
+                var text = reader.readFile();
+                textArea.setText(text);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     }
 

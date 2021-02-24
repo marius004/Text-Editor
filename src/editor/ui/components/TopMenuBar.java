@@ -1,17 +1,15 @@
 package editor.ui.components;
 
 import editor.api.Command;
-import editor.api.EditorObservableData;
+
 import editor.api.dp.Disposable;
+import editor.api.dp.EditorObservableData;
 import editor.api.dp.Observable;
 import editor.api.dp.Observer;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,10 +17,8 @@ public class TopMenuBar implements Observable<EditorObservableData> {
 
     private MenuBar menuBar;
     private List< Observer < EditorObservableData > > subscribers;
-    private Stage stage;
 
-    public TopMenuBar(Stage stage) {
-        this.stage = stage;
+    public TopMenuBar() {
         this.menuBar     = new MenuBar();
         this.subscribers = new ArrayList<>();
         populateMenuBar();
@@ -41,41 +37,27 @@ public class TopMenuBar implements Observable<EditorObservableData> {
         Menu fileMenu = new Menu("File");
 
         MenuItem  newItem  = new MenuItem("New");
-
         newItem.setOnAction(actionEvent -> {
-            EditorObservableData data = new EditorObservableData(Command.NEW_FILE, "the file path should be here");
+            EditorObservableData data = new EditorObservableData(Command.NEW_FILE);
             Notify(data);
         });
 
         MenuItem openItem = new MenuItem("Open");
-
         openItem.setOnAction(actionEvent -> {
-
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Select file");
-
-            File file = fileChooser.showOpenDialog(stage);
-
-            if(file != null) { //if the user selected a file to open
-                EditorObservableData data = new EditorObservableData(Command.OPEN_FILE, file.toString());
-                Notify(data);
-            }
-
+              EditorObservableData data = new EditorObservableData(Command.OPEN_FILE);
+              Notify(data);
         });
 
         MenuItem closeItem = new MenuItem("Close");
-
-        MenuItem saveItem = new MenuItem("Save");
-
-        saveItem.setOnAction(event -> {
-            System.out.println("Saving stuff");
+        closeItem.setOnAction(actionEvent -> {
+            EditorObservableData data = new EditorObservableData(Command.CLOSE_FILE);
+            Notify(data);
         });
 
-        closeItem.setOnAction(actionEvent -> {
-            EditorObservableData data = new EditorObservableData(Command.CLOSE_FILE, "");
+        MenuItem saveItem = new MenuItem("Save");
+        saveItem.setOnAction(event -> {
+            EditorObservableData data = new EditorObservableData(Command.SAVE);
             Notify(data);
-
-            System.exit(0);
         });
 
         fileMenu.getItems().addAll(newItem, openItem, closeItem,saveItem);
@@ -88,26 +70,32 @@ public class TopMenuBar implements Observable<EditorObservableData> {
         Menu editMenu = new Menu("Edit");
 
         MenuItem undoItem   = new MenuItem("Undo");
+        undoItem.setOnAction(actionEvent -> {
+            var data = new EditorObservableData(Command.UNDO);
+            Notify(data);
+        });
+
         MenuItem redoItem   = new MenuItem("Redo");
+        redoItem.setOnAction(actionEvent -> {
+            var data = new EditorObservableData(Command.REDO);
+            Notify(data);
+        });
 
         MenuItem copyItem   = new MenuItem("Copy");
-
         copyItem.setOnAction(actionEvent -> {
-            var data = new EditorObservableData(Command.COPY, "");
+            var data = new EditorObservableData(Command.COPY);
             Notify(data);
         });
 
         MenuItem pasteItem  = new MenuItem("Paste");
-
         pasteItem.setOnAction(event -> {
-            EditorObservableData data = new EditorObservableData(Command.PASTE, "");
+            EditorObservableData data = new EditorObservableData(Command.PASTE);
             Notify(data);
         });
 
         MenuItem deleteItem = new MenuItem("Delete");
-
         deleteItem.setOnAction(event -> {
-            EditorObservableData data = new EditorObservableData(Command.DELETE, "");
+            EditorObservableData data = new EditorObservableData(Command.DELETE);
             Notify(data);
         });
 
@@ -154,5 +142,4 @@ public class TopMenuBar implements Observable<EditorObservableData> {
                 _observers.remove(_observer);
         }
     }
-
 }

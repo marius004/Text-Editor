@@ -21,8 +21,8 @@ public class EditorScene extends Scene {
     }
 
     private void createUIComponents() {
-        this.menuBar = new TopMenuBar(stage);
-        this.editor = new Editor(this);
+        this.menuBar = new TopMenuBar();
+        this.editor = new Editor(stage,this);
     }
 
     private void init() {

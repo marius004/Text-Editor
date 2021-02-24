@@ -1,4 +1,4 @@
-package editor.api;
+package editor.api.helpers;
 
 import java.io.File;
 import java.io.FileNotFoundException;
