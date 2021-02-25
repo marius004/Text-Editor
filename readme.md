@@ -1,4 +1,5 @@
-#Text editor 
+# Text editor
 
-Description: 
-This is just a simple text editor I developed
+https://youtu.be/MzP9DLn8EiQ
+
+This is a simple text editor I developed using JavaFX. I forced myself not to use the MVC. Instead, I used the Observable and Memento design patterns.  This project proved to be enjoyable because I got to practice the newly learned design patterns. I tried to respect the OOD and the SOLID principles as much as possible. So, if you have any ideas/suggestions please contact me.
