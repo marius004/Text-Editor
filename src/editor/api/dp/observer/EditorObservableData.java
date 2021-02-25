@@ -1,4 +1,4 @@
-package editor.api.dp;
+package editor.api.dp.observer;
 
 import editor.api.Command;
 

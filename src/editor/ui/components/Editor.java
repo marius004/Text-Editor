@@ -1,7 +1,9 @@
 package editor.ui.components;
 
-import editor.api.dp.EditorObservableData;
-import editor.api.dp.Observer;
+import editor.api.dp.memento.CareTaker;
+import editor.api.dp.memento.Originator;
+import editor.api.dp.observer.EditorObservableData;
+import editor.api.dp.observer.Observer;
 import editor.api.helpers.FileReader;
 import editor.api.helpers.FileSaver;
 import javafx.scene.Cursor;
@@ -23,12 +25,17 @@ public class Editor implements Observer<EditorObservableData> {
     private Stage stage;
     private String copiedText = "";
     private String filePath = "";
+    private Originator<String> originator;
+    private CareTaker<String> careTaker;
 
     public Editor(Stage stage, Scene scene) {
 
         this.stage = stage;
         this.scene = scene;
         this.textArea = new TextArea();
+
+        this.originator = new Originator<String>();
+        this.careTaker = new CareTaker<String>();
 
         configureTextArea();
     }
@@ -55,7 +62,7 @@ public class Editor implements Observer<EditorObservableData> {
                break;
 
            case OPEN_FILE:
-               openFile(observableData);
+               openFile();
                break;
 
            case CLOSE_FILE:
@@ -74,15 +81,35 @@ public class Editor implements Observer<EditorObservableData> {
                saveToFile();
                break;
 
+           case UNDO:
+               undo();
+               break;
+
+           case REDO:
+               redo();
+               break;
+
            default:
-               System.out.println(observableData.getCommand().toString() + " is not implemented yet");
+               System.out.println(observableData.getCommand() + " not implemented");
                break;
        }
     }
 
     void closeApp() {
         saveToFile();
+        careTaker.clearHistory();
+
         System.exit(0);
+    }
+
+    void undo() {
+        var memento = careTaker.undo();
+        textArea.setText(memento.getState());
+    }
+
+    void redo() {
+        var memento = careTaker.redo();
+        textArea.setText(memento.getState());
     }
 
     void saveToFile() {
@@ -91,6 +118,10 @@ public class Editor implements Observer<EditorObservableData> {
 
             FileChooser fileChooser = new FileChooser();
             File newFile = fileChooser.showSaveDialog(stage);
+
+            ///update the careTaker
+            originator.setState(textArea.getText());
+            careTaker.addMemento(originator.save());
 
             if(newFile != null) {
                 filePath = newFile.getAbsolutePath();
@@ -102,6 +133,10 @@ public class Editor implements Observer<EditorObservableData> {
 
         FileSaver saver = new FileSaver(this.filePath, this.textArea.getText());
 
+        //// update the careTaker
+        originator.setState(this.textArea.getText());
+        careTaker.addMemento(originator.save());
+
         try {
             saver.save();
         } catch (Exception e){
@@ -109,7 +144,6 @@ public class Editor implements Observer<EditorObservableData> {
         }
     }
 
-    /// DONE
     void pasteText() {
         int cursorPosition = textArea.getCaretPosition();
 
@@ -117,8 +151,15 @@ public class Editor implements Observer<EditorObservableData> {
                 + copiedText
                 + textArea.getText().substring(cursorPosition);
 
-        textArea.setText(text);
-        textArea.positionCaret(cursorPosition + copiedText.length());
+        if(text != textArea.getText()) {
+
+            /// update the careTaker
+            originator.setState(text);
+            careTaker.addMemento(originator.save());
+
+            textArea.setText(text);
+            textArea.positionCaret(cursorPosition + copiedText.length());
+        }
     }
 
     void copyText() {
@@ -134,6 +175,10 @@ public class Editor implements Observer<EditorObservableData> {
             var res =  entireText.replace(selectedText, "");
             int caretPosition = entireText.indexOf(selectedText);
 
+            //update the careTaker
+            originator.setState(res);
+            careTaker.addMemento(originator.save());
+
             textArea.setText(res);
             textArea.positionCaret(caretPosition);
         }
@@ -144,7 +189,7 @@ public class Editor implements Observer<EditorObservableData> {
             this.stage.setTitle(title);
     }
 
-    void openFile(EditorObservableData observableData) {
+    void openFile() {
 
         if(textArea.getText().trim() != "")
             saveToFile();
@@ -156,6 +201,9 @@ public class Editor implements Observer<EditorObservableData> {
 
         if(file != null) {
 
+            /// a new file => clear the careTaker's history
+            this.careTaker.clearHistory();
+
             this.filePath = file.toString();
             updateStageTitle(file.getName());
 
@@ -163,6 +211,10 @@ public class Editor implements Observer<EditorObservableData> {
                 FileReader reader = new FileReader(this.filePath);
                 var text = reader.readFile();
                 textArea.setText(text);
+
+                originator.setState(text);
+                careTaker.addMemento(originator.save());
+
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }

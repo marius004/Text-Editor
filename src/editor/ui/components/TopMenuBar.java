@@ -3,9 +3,9 @@ package editor.ui.components;
 import editor.api.Command;
 
 import editor.api.dp.Disposable;
-import editor.api.dp.EditorObservableData;
-import editor.api.dp.Observable;
-import editor.api.dp.Observer;
+import editor.api.dp.observer.EditorObservableData;
+import editor.api.dp.observer.Observable;
+import editor.api.dp.observer.Observer;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -16,7 +16,7 @@ import java.util.List;
 public class TopMenuBar implements Observable<EditorObservableData> {
 
     private MenuBar menuBar;
-    private List< Observer < EditorObservableData > > subscribers;
+    private List<Observer<EditorObservableData>> subscribers;
 
     public TopMenuBar() {
         this.menuBar     = new MenuBar();
@@ -27,20 +27,13 @@ public class TopMenuBar implements Observable<EditorObservableData> {
     private void populateMenuBar() {
         Menu fileMenu = createFileMenu();
         Menu menuEdit = createEditMenu();
-        Menu preferencesMenu = createPreferencesMenu();
 
-        menuBar.getMenus().addAll(fileMenu, menuEdit, preferencesMenu);
+        menuBar.getMenus().addAll(fileMenu, menuEdit);
     }
 
     private Menu createFileMenu() {
 
         Menu fileMenu = new Menu("File");
-
-        MenuItem  newItem  = new MenuItem("New");
-        newItem.setOnAction(actionEvent -> {
-            EditorObservableData data = new EditorObservableData(Command.NEW_FILE);
-            Notify(data);
-        });
 
         MenuItem openItem = new MenuItem("Open");
         openItem.setOnAction(actionEvent -> {
@@ -60,7 +53,7 @@ public class TopMenuBar implements Observable<EditorObservableData> {
             Notify(data);
         });
 
-        fileMenu.getItems().addAll(newItem, openItem, closeItem,saveItem);
+        fileMenu.getItems().addAll(openItem, closeItem,saveItem);
 
         return fileMenu;
     }
@@ -102,13 +95,6 @@ public class TopMenuBar implements Observable<EditorObservableData> {
         editMenu.getItems().addAll(undoItem, redoItem, copyItem, deleteItem, pasteItem);
 
         return editMenu;
-    }
-
-    private Menu createPreferencesMenu() {
-        Menu preferencesMenu = new Menu("Preferences");
-
-        ///TODO add action listeners
-        return preferencesMenu;
     }
 
     public MenuBar getComponent() {
