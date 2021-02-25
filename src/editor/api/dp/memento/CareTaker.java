@@ -29,7 +29,7 @@ public class CareTaker<T> {
 
     public void addMemento(Memento<T> memento) {
 
-        /// we don't wanna add the save memento twice
+        /// we don't wanna add the same memento twice
         if(this.history.size() == 0 || memento.getState() != history.get(current).getState()) {
             this.history.add(memento);
             current = this.history.size() - 1;
