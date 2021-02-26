@@ -34,7 +34,6 @@ public class EditorScene extends Scene {
         this.stage = stage;
 
         createUIComponents();
-
         bindComponents();
         init();
     }

@@ -1,7 +1,7 @@
 package editor.ui.components;
 
-import editor.api.dp.memento.CareTaker;
-import editor.api.dp.memento.Originator;
+import editor.api.dp.memento.TextEditorCareTaker;
+import editor.api.dp.memento.TextEditorSnapshot;
 import editor.api.dp.observer.EditorObservableData;
 import editor.api.dp.observer.Observer;
 import editor.api.helpers.FileReader;
@@ -15,27 +15,28 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-/// GOOD FOR SYNTAX HIGHLIGHTING
-//https://stackoverflow.com/questions/9128535/highlighting-strings-in-javafx-textarea/53332158#53332158
+// https://refactoring.guru/design-patterns/memento#:~:text=Memento%20is%20a%20behavioral%20design,the%20details%20of%20its%20implementation.
+/** this class is the Originator **/
 
 public class Editor implements Observer<EditorObservableData> {
+
+    // private int cursorPosition; => the equivalent is textArea.getCaretPosition()
+    // private String text; => the equivalent is textArea.getText()
 
     private TextArea textArea;
     private Scene scene;
     private Stage stage;
     private String copiedText = "";
     private String filePath = "";
-    private Originator<String> originator;
-    private CareTaker<String> careTaker;
+
+    private TextEditorCareTaker historyProvider; /// what do u think about the naming?))
 
     public Editor(Stage stage, Scene scene) {
 
         this.stage = stage;
         this.scene = scene;
         this.textArea = new TextArea();
-
-        this.originator = new Originator<String>();
-        this.careTaker = new CareTaker<String>();
+        this.historyProvider = new TextEditorCareTaker();
 
         configureTextArea();
     }
@@ -97,19 +98,19 @@ public class Editor implements Observer<EditorObservableData> {
 
     void closeApp() {
         saveToFile();
-        careTaker.clearHistory();
+        historyProvider.clearHistory();
 
         System.exit(0);
     }
 
     void undo() {
-        var memento = careTaker.undo();
-        textArea.setText(memento.getState());
+        var memento = historyProvider.undo();
+        restore(memento);
     }
 
     void redo() {
-        var memento = careTaker.redo();
-        textArea.setText(memento.getState());
+        var memento = historyProvider.redo();
+        restore(memento);
     }
 
     void saveToFile() {
@@ -119,9 +120,8 @@ public class Editor implements Observer<EditorObservableData> {
             FileChooser fileChooser = new FileChooser();
             File newFile = fileChooser.showSaveDialog(stage);
 
-            ///update the careTaker
-            originator.setState(textArea.getText());
-            careTaker.addMemento(originator.save());
+            if(textArea.getText() != historyProvider.getCurrentState().getText())
+                historyProvider.addMemento(save()); //// it is like calling originator.save()
 
             if(newFile != null) {
                 filePath = newFile.getAbsolutePath();
@@ -133,9 +133,8 @@ public class Editor implements Observer<EditorObservableData> {
 
         FileSaver saver = new FileSaver(this.filePath, this.textArea.getText());
 
-        //// update the careTaker
-        originator.setState(this.textArea.getText());
-        careTaker.addMemento(originator.save());
+        if(textArea.getText() != historyProvider.getCurrentState().getText())
+            historyProvider.addMemento(save());
 
         try {
             saver.save();
@@ -153,9 +152,8 @@ public class Editor implements Observer<EditorObservableData> {
 
         if(text != textArea.getText()) {
 
-            /// update the careTaker
-            originator.setState(text);
-            careTaker.addMemento(originator.save());
+            if(textArea.getText() != historyProvider.getCurrentState().getText())
+                historyProvider.addMemento(save());
 
             textArea.setText(text);
             textArea.positionCaret(cursorPosition + copiedText.length());
@@ -175,12 +173,10 @@ public class Editor implements Observer<EditorObservableData> {
             var res =  entireText.replace(selectedText, "");
             int caretPosition = entireText.indexOf(selectedText);
 
-            //update the careTaker
-            originator.setState(res);
-            careTaker.addMemento(originator.save());
-
             textArea.setText(res);
             textArea.positionCaret(caretPosition);
+
+            historyProvider.addMemento(save());
         }
     }
 
@@ -202,7 +198,7 @@ public class Editor implements Observer<EditorObservableData> {
         if(file != null) {
 
             /// a new file => clear the careTaker's history
-            this.careTaker.clearHistory();
+            this.historyProvider.clearHistory();
 
             this.filePath = file.toString();
             updateStageTitle(file.getName());
@@ -212,8 +208,8 @@ public class Editor implements Observer<EditorObservableData> {
                 var text = reader.readFile();
                 textArea.setText(text);
 
-                originator.setState(text);
-                careTaker.addMemento(originator.save());
+                if(textArea.getText() != historyProvider.getCurrentState().getText())
+                    historyProvider.addMemento(save());
 
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -222,12 +218,18 @@ public class Editor implements Observer<EditorObservableData> {
     }
 
     @Override
-    public void onError() {
-        System.out.println("Some unexpected exception occurred");
-    }
+    public void onError() {}
 
     @Override
-    public void onCompleted() {
-        System.out.println("I am done being an observer");
+    public void onCompleted() {}
+
+    /// memento design pattern stuff below
+    private TextEditorSnapshot save() {
+        return new TextEditorSnapshot(textArea.getText(), textArea.getCaretPosition());
+    }
+
+    private void restore(TextEditorSnapshot snapshot) {
+        textArea.setText(snapshot.getText());
+        textArea.positionCaret(snapshot.getCursorPosition());
     }
 }

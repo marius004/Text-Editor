@@ -16,7 +16,7 @@ import java.util.List;
 public class TopMenuBar implements Observable<EditorObservableData> {
 
     private MenuBar menuBar;
-    private List<Observer<EditorObservableData>> subscribers;
+    private List< Observer<EditorObservableData> > subscribers;
 
     public TopMenuBar() {
         this.menuBar     = new MenuBar();
