@@ -1,4 +1,6 @@
-# Text editor
+# Text editor. Brief Preview
+
+[![IMAGE ALT TEXT HERE](https://github.com/marius004/Text-Editor/blob/master/editor.png?raw=true)](https://www.youtube.com/watch?v=MzP9DLn8EiQ)
 
 https://youtu.be/MzP9DLn8EiQ
 
